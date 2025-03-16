@@ -5,14 +5,15 @@ const { sendSensorsToAPI, sendSensorValueToAPI } = require('./apiClient');
 const { checkThreshold, sendAlert } = require('./alertService');
 const config = require('./config');
 
-// Fonction principale à exécuter toutes les 5 minutes
+// Fonction principale à exécuter selon la planification
 const runTask = async () => {
-    console.log('Début de la tâche planifiée...');
+    console.log('\n=== Début de la tâche planifiée ===');
 
-    // Récupérer les capteurs (filtrer par type si spécifié)
-    const sensors = await getSensors(config.SENSOR_TYPE);
+    // Récupérer les capteurs avec l'unité de mesure configurée
+    const sensors = await getSensors(config.SENSOR_UNIT);
     if (sensors.length === 0) {
-        console.log('Aucun capteur trouvé.');
+        console.log('Aucun capteur trouvé avec l\'unité de mesure :', config.SENSOR_UNIT);
+        console.log('=== Fin de la tâche planifiée ===\n');
         return;
     }
 
@@ -27,16 +28,18 @@ const runTask = async () => {
         // Envoyer la valeur du capteur à l'API externe
         await sendSensorValueToAPI(sensor.entity_id, value);
 
-        // Vérifier le seuil et envoyer une alerte si nécessaire
-        if (checkThreshold(value)) {
-            await sendAlert(sensor.entity_id, value);
+        // Vérifier les seuils et envoyer une alerte si nécessaire
+        const exceededThresholds = checkThreshold(value);
+        if (exceededThresholds) {
+            await sendAlert(sensor.entity_id, value, exceededThresholds);
         }
     }
 
-    console.log('Tâche planifiée terminée.');
+    console.log('=== Fin de la tâche planifiée ===\n');
 };
 
-// Planifier l'exécution toutes les 5 minutes
-cron.schedule('*/5 * * * *', runTask);
+// Récupérer l'expression cron depuis la configuration ou les arguments de ligne de commande
+const cronSchedule = process.env.CRON_SCHEDULE || config.CRON_SCHEDULE;
 
+// Exporter la fonction runTask
 module.exports = { runTask };

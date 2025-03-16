@@ -5,6 +5,10 @@ const config = require('./config');
 // Envoyer la liste des capteurs à l'API externe
 const sendSensorsToAPI = async (sensors) => {
     try {
+        console.log('Envoi de la liste des capteurs à l\'API externe...');
+        console.log('URL de l\'API :', `${config.EXTERNAL_API_URL}/sensors`);
+        console.log('Données envoyées :', JSON.stringify({ sensors }, null, 2));
+
         await axios.post(`${config.EXTERNAL_API_URL}/sensors`, { sensors });
         console.log('Liste des capteurs envoyée avec succès.');
     } catch (error) {
@@ -15,6 +19,10 @@ const sendSensorsToAPI = async (sensors) => {
 // Envoyer les données d'un capteur à l'API externe
 const sendSensorValueToAPI = async (sensorId, value) => {
     try {
+        console.log(`Envoi des données du capteur ${sensorId} à l\'API externe...`);
+        console.log('URL de l\'API :', `${config.EXTERNAL_API_URL}/sensor-data`);
+        console.log('Données envoyées :', JSON.stringify({ sensorId, value }, null, 2));
+
         await axios.post(`${config.EXTERNAL_API_URL}/sensor-data`, { sensorId, value });
         console.log(`Valeur du capteur ${sensorId} envoyée avec succès.`);
     } catch (error) {
