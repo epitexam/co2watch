@@ -7,7 +7,7 @@ const logger = require('./logger'); // Importer le logger
 const getSensors = async (unit = 'ppm') => {
     try {
         logger.info('Récupération des capteurs depuis Home Assistant...');
-        const response = await axios.get(`${config.HOME_ASSISTANT_URL}/states`, {
+        const response = await axios.get(`${config.HOME_ASSISTANT_URL}states`, {
             headers: {
                 'Authorization': `Bearer ${config.HOME_ASSISTANT_TOKEN}`,
                 'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ const getSensors = async (unit = 'ppm') => {
 const getSensorValue = async (sensorId) => {
     try {
         logger.info(`Récupération de la valeur du capteur ${sensorId}...`);
-        const response = await axios.get(`${config.HOME_ASSISTANT_URL}/states/${sensorId}`, {
+        const response = await axios.get(`${config.HOME_ASSISTANT_URL}states/${sensorId}`, {
             headers: {
                 'Authorization': `Bearer ${config.HOME_ASSISTANT_TOKEN}`,
                 'Content-Type': 'application/json',
@@ -55,4 +55,40 @@ const getSensorValue = async (sensorId) => {
     }
 };
 
-module.exports = { getSensors, getSensorValue };
+// Vérifier la disponibilité de l'API Home Assistant
+const checkHomeAssistantAvailability = async () => {
+    try {
+        logger.info('Vérification de la disponibilité de l\'API Home Assistant...');
+        const response = await axios.get(`${config.HOME_ASSISTANT_URL}`, {
+            headers: {
+                'Authorization': `Bearer ${config.HOME_ASSISTANT_TOKEN}`,
+                'Content-Type': 'application/json',
+            },
+            timeout: 5000, // Timeout set to 5 seconds
+        });
+
+        if (response.status === 200) {
+            logger.info('L\'API Home Assistant est disponible.');
+            return true;
+        }
+
+        logger.error(`L\'API Home Assistant a répondu avec un statut inattendu : ${response.status}`);
+        return false;
+    } catch (error) {
+        if (error.response) {
+            const { status, statusText } = error.response;
+            const errorMessages = {
+                401: 'Erreur 401 : Accès non autorisé à l\'API Home Assistant.',
+                404: 'Erreur 404 : L\'API Home Assistant est introuvable.',
+            };
+            logger.error(errorMessages[status] || `Erreur HTTP ${status} : ${statusText}`);
+        } else if (error.code === 'ECONNABORTED') {
+            logger.error('La vérification de l\'API Home Assistant a expiré (timeout).');
+        } else {
+            logger.error('Erreur lors de la vérification de l\'API Home Assistant :', error.message);
+        }
+        return false;
+    }
+};
+
+module.exports = { getSensors, getSensorValue, checkHomeAssistantAvailability };
