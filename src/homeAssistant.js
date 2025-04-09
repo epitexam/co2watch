@@ -17,11 +17,16 @@ const getSensors = async (unit = 'ppm') => {
         // Filtrer les capteurs dont l'unité de mesure correspond
         const sensors = response.data.filter(entity => {
             return entity.attributes && entity.attributes.unit_of_measurement === unit;
-        });
+        }).map(sensor => ({
+            entity_id: sensor.entity_id,
+            state: sensor.state,
+            friendly_name: sensor.attributes.friendly_name,
+            unit_of_measurement: sensor.attributes.unit_of_measurement,
+        }));
 
         logger.info(`${sensors.length} capteur(s) trouvé(s) avec l'unité de mesure "${unit}" :`);
         sensors.forEach(sensor => {
-            logger.info(`- ${sensor.entity_id} : ${sensor.state} ${sensor.attributes.unit_of_measurement}`);
+            logger.info(`- ${sensor.friendly_name} : ${sensor.state} ${sensor.unit_of_measurement}`);
         });
 
         return sensors;

@@ -35,7 +35,7 @@ const runTask = async () => {
         if (value === null) continue;
 
         // Envoyer la valeur du capteur à l'API externe
-        await sendSensorValueToAPI(sensor.entity_id, value);
+        await sendSensorValueToAPI(value, sensor.friendly_name);
 
         // Vérifier les seuils et envoyer une alerte si nécessaire
         const exceededThresholds = checkThreshold(value);
