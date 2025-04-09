@@ -4,24 +4,25 @@ const { getSensors, getSensorValue } = require('./homeAssistant');
 const { sendSensorsToAPI, sendSensorValueToAPI, checkAPIAvailability } = require('./apiClient');
 const { checkThreshold, sendAlert } = require('./alertService');
 const config = require('./config');
+const logger = require('./logger');
 
 // Fonction principale à exécuter selon la planification
 const runTask = async () => {
-    console.log('\n=== Début de la tâche planifiée ===');
+    logger.info('\n=== Début de la tâche planifiée ===');
 
     // Vérifier la disponibilité de l'API externe
     const isAPIAvailable = await checkAPIAvailability();
     if (!isAPIAvailable) {
-        console.log('L\'API externe n\'est pas disponible. Tâche annulée.');
-        console.log('=== Fin de la tâche planifiée ===\n');
+        logger.warn('L\'API externe n\'est pas disponible. Tâche annulée.');
+        logger.info('=== Fin de la tâche planifiée ===\n');
         return;
     }
 
     // Récupérer les capteurs avec l'unité de mesure configurée
     const sensors = await getSensors(config.SENSOR_UNIT);
     if (sensors.length === 0) {
-        console.log('Aucun capteur trouvé avec l\'unité de mesure :', config.SENSOR_UNIT);
-        console.log('=== Fin de la tâche planifiée ===\n');
+        logger.info('Aucun capteur trouvé avec l\'unité de mesure :', config.SENSOR_UNIT);
+        logger.info('=== Fin de la tâche planifiée ===\n');
         return;
     }
 
@@ -43,7 +44,7 @@ const runTask = async () => {
         }
     }
 
-    console.log('=== Fin de la tâche planifiée ===\n');
+    logger.info('=== Fin de la tâche planifiée ===\n');
 };
 
 // Récupérer l'expression cron depuis la configuration ou les arguments de ligne de commande
