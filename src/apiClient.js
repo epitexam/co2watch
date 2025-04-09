@@ -1,32 +1,33 @@
 // src/apiClient.js
 const axios = require('axios');
 const config = require('./config');
+const logger = require("./logger");
 
 // Envoyer la liste des capteurs à l'API externe
 const sendSensorsToAPI = async (sensors) => {
     try {
-        console.log('Envoi de la liste des capteurs à l\'API externe...');
-        console.log('URL de l\'API :', `${config.EXTERNAL_API_URL}/sensors`);
-        console.log('Données envoyées :', JSON.stringify({ sensors }, null, 2));
+        logger.info('Envoi de la liste des capteurs à l\'API externe...');
+        logger.info('URL de l\'API :', `${config.EXTERNAL_API_URL}/sensors`);
+        logger.info('Données envoyées :', JSON.stringify({ sensors }, null, 2));
 
         await axios.post(`${config.EXTERNAL_API_URL}/sensors`, { sensors });
-        console.log('Liste des capteurs envoyée avec succès.');
+        logger.info('Liste des capteurs envoyée avec succès.');
     } catch (error) {
-        console.error('Erreur lors de l\'envoi des capteurs à l\'API :', error.message);
+        logger.error('Erreur lors de l\'envoi des capteurs à l\'API :', error.message);
     }
 };
 
 // Envoyer les données d'un capteur à l'API externe
 const sendSensorValueToAPI = async (sensorId, value) => {
     try {
-        console.log(`Envoi des données du capteur ${sensorId} à l\'API externe...`);
-        console.log('URL de l\'API :', `${config.EXTERNAL_API_URL}/sensor-data`);
-        console.log('Données envoyées :', JSON.stringify({ sensorId, value }, null, 2));
+        logger.info(`Envoi des données du capteur ${sensorId} à l\'API externe...`);
+        logger.info('URL de l\'API :', `${config.EXTERNAL_API_URL}/sensor-data`);
+        logger.info('Données envoyées :', JSON.stringify({ sensorId, value }, null, 2));
 
         await axios.post(`${config.EXTERNAL_API_URL}/sensor-data`, { sensorId, value });
-        console.log(`Valeur du capteur ${sensorId} envoyée avec succès.`);
+        logger.info(`Valeur du capteur ${sensorId} envoyée avec succès.`);
     } catch (error) {
-        console.error('Erreur lors de l\'envoi des données du capteur à l\'API :', error.message);
+        logger.error('Erreur lors de l\'envoi des données du capteur à l\'API :', error.message);
     }
 };
 
