@@ -31,4 +31,22 @@ const sendSensorValueToAPI = async (sensorId, value) => {
     }
 };
 
-module.exports = { sendSensorsToAPI, sendSensorValueToAPI };
+// Vérifier si l'API externe est disponible
+const checkAPIAvailability = async () => {
+    try {
+        logger.info('Vérification de la disponibilité de l\'API externe...');
+        const response = await axios.get(`${config.EXTERNAL_API_URL}/example`);
+        if (response.status === 200) {
+            logger.info('L\'API externe est disponible.');
+            return true;
+        } else {
+            logger.warn('L\'API externe a répondu, mais le statut n\'est pas 200.');
+            return false;
+        }
+    } catch (error) {
+        logger.error('Erreur lors de la vérification de la disponibilité de l\'API externe :', error.message);
+        return false;
+    }
+};
+
+module.exports = { sendSensorsToAPI, sendSensorValueToAPI, checkAPIAvailability };
