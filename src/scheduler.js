@@ -1,7 +1,7 @@
 // src/scheduler.js
 const cron = require('node-cron');
 const { getSensors, getSensorValue } = require('./homeAssistant');
-const { sendSensorsToAPI, sendSensorValueToAPI, checkAPIAvailability } = require('./apiClient');
+const { checkAPIAvailability, checkSensorExists, createSensor } = require('./apiClient');
 const { checkThreshold, sendAlert } = require('./alertService');
 const config = require('./config');
 const logger = require('./logger');
@@ -10,38 +10,53 @@ const logger = require('./logger');
 const runTask = async () => {
     logger.info('\n=== Début de la tâche planifiée ===');
 
-    // Vérifier la disponibilité de l'API externe
-    const isAPIAvailable = await checkAPIAvailability();
-    if (!isAPIAvailable) {
-        logger.warn('L\'API externe n\'est pas disponible. Tâche annulée.');
-        logger.info('=== Fin de la tâche planifiée ===\n');
-        return;
-    }
-
-    // Récupérer les capteurs avec l'unité de mesure configurée
-    const sensors = await getSensors(config.SENSOR_UNIT);
-    if (sensors.length === 0) {
-        logger.info('Aucun capteur trouvé avec l\'unité de mesure :', config.SENSOR_UNIT);
-        logger.info('=== Fin de la tâche planifiée ===\n');
-        return;
-    }
-
-    // Envoyer la liste des capteurs à l'API externe
-    await sendSensorsToAPI(sensors);
-
-    // Pour chaque capteur, récupérer la valeur et la traiter
-    for (const sensor of sensors) {
-        const value = await getSensorValue(sensor.entity_id);
-        if (value === null) continue;
-
-        // Envoyer la valeur du capteur à l'API externe
-        await sendSensorValueToAPI(value, sensor.friendly_name);
-
-        // Vérifier les seuils et envoyer une alerte si nécessaire
-        const exceededThresholds = checkThreshold(value);
-        if (exceededThresholds) {
-            await sendAlert(sensor.entity_id, value, exceededThresholds);
+    try {
+        // Vérifier la disponibilité de l'API externe
+        const isAPIAvailable = await checkAPIAvailability();
+        if (!isAPIAvailable) {
+            logger.warn('L\'API externe n\'est pas disponible. Tâche annulée.');
+            logger.info('=== Fin de la tâche planifiée ===\n');
+            return;
         }
+
+        // Récupérer les capteurs avec l'unité de mesure configurée
+        const sensors = await getSensors(config.SENSOR_UNIT);
+        if (sensors.length === 0) {
+            logger.info('Aucun capteur trouvé avec l\'unité de mesure :', config.SENSOR_UNIT);
+            logger.info('=== Fin de la tâche planifiée ===\n');
+            return;
+        }
+
+        // Pour chaque capteur, vérifier son existence, le créer si nécessaire, récupérer la valeur et la traiter
+        for (const sensor of sensors) {
+            try {
+                let sensorExists = await checkSensorExists(sensor.friendly_name);
+                if (!sensorExists) {
+                    logger.warn(`Le capteur "${sensor.friendly_name}" n'existe pas sur l'API externe. Tentative de création...`);
+                    const unitOfMeasurement = sensor.unit_of_measurement || config.DEFAULT_UNIT; // Fallback to default if not provided
+                    const roomId = 1; // Fallback to default if not provided
+                    sensorExists = await createSensor(sensor.friendly_name, unitOfMeasurement, roomId);
+                    if (!sensorExists) {
+                        logger.error(`Impossible de créer le capteur "${sensor.friendly_name}". Ignoré.`);
+                        continue;
+                    }
+                }
+            } catch (error) {
+                logger.error(`Erreur lors de la vérification ou de la création du capteur "${sensor.friendly_name}" :`, error.stack || error.message);
+                continue;
+            }
+
+            const value = await getSensorValue(sensor.entity_id);
+            if (value === null) continue;
+
+            // Vérifier les seuils et envoyer une alerte si nécessaire
+            const exceededThresholds = checkThreshold(value);
+            if (exceededThresholds) {
+                await sendAlert(sensor.entity_id, value, exceededThresholds);
+            }
+        }
+    } catch (error) {
+        logger.error('Erreur lors de l\'exécution de la tâche planifiée :', error.stack || error.message);
     }
 
     logger.info('=== Fin de la tâche planifiée ===\n');
