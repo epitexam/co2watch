@@ -1,7 +1,8 @@
 // src/index.js
+const logger = require('./logger');
 const { runTask } = require('./scheduler');
 
 // Démarrer la tâche immédiatement au lancement du script
 runTask().then(() => {
-    console.log('Application démarrée. Les tâches seront exécutées toutes les 5 minutes.');
+    logger.info('Application démarrée. Les tâches seront exécutées selon la planification cron.');
 });
