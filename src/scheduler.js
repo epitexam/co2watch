@@ -1,7 +1,7 @@
 // src/scheduler.js
 const cron = require('node-cron');
 const { getSensors, getSensorValue } = require('./homeAssistant');
-const { checkAPIAvailability, checkSensorExists, createSensor } = require('./apiClient');
+const { checkAPIAvailability, checkSensorExists, createSensor, createSensorHistory } = require('./apiClient');
 const { checkThreshold, sendAlert } = require('./alertService');
 const config = require('./config');
 const logger = require('./logger');
@@ -48,6 +48,14 @@ const runTask = async () => {
 
             const value = await getSensorValue(sensor.entity_id);
             if (value === null) continue;
+
+            // Créer une entrée d'historique pour le capteur
+            const recordedAt = new Date().toISOString();
+            const historyCreated = await createSensorHistory(sensor.friendly_name, value, recordedAt);
+            if (!historyCreated) {
+                logger.error(`Impossible de créer une entrée d'historique pour le capteur "${sensor.friendly_name}".`);
+                continue;
+            }
 
             // Vérifier les seuils et envoyer une alerte si nécessaire
             const exceededThresholds = checkThreshold(value);

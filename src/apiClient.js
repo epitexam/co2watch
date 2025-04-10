@@ -94,4 +94,36 @@ const createSensor = async (friendlyName, unitOfMeasurement, roomId) => {
     }
 };
 
-module.exports = { checkAPIAvailability, checkSensorExists, createSensor };
+// Créer une entrée d'historique pour un capteur
+const createSensorHistory = async (friendlyName, state, recordedAt) => {
+    try {
+        logger.info(`Création d'une entrée d'historique pour le capteur "${friendlyName}" avec l'état "${state}"...`);
+        const response = await axios.post(
+            `${config.EXTERNAL_API_URL}v1/admin/history/`,
+            {
+                friendly_name: friendlyName,
+                state,
+                recorded_at: recordedAt,
+            },
+            getAuthHeaders()
+        );
+
+        if (response.status === 201) {
+            logger.info(`L'entrée d'historique pour le capteur "${friendlyName}" a été créée avec succès.`);
+            return true;
+        } else {
+            logger.warn(`L'entrée d'historique pour le capteur "${friendlyName}" n'a pas pu être créée. Statut : ${response.status}`);
+            return false;
+        }
+    } catch (error) {
+        if (error.response) {
+            const errorData = typeof error.response.data === 'object' ? JSON.stringify(error.response.data, null, 2) : error.response.data;
+            logger.error(`Erreur HTTP ${error.response.status} lors de la création de l'historique pour le capteur "${friendlyName}" : ${errorData}`);
+        } else {
+            logger.error(`Erreur lors de la création de l'historique pour le capteur "${friendlyName}" :`, error.stack || error.message);
+        }
+        return false;
+    }
+};
+
+module.exports = { checkAPIAvailability, checkSensorExists, createSensor, createSensorHistory };
