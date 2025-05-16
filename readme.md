@@ -236,3 +236,34 @@ This project is licensed under the ISC License.
 ## Author
 
 Created by **Epitexam**.
+
+## Déploiement avec pm2
+
+Pour exécuter l'application en tant que service avec [pm2](https://pm2.keymetrics.io/)
+
+1. Installer les dépendances (incluant pm2) :
+   ```bash
+   yarn install
+   ```
+
+2. Lancer l'application avec pm2 :
+   ```bash
+   yarn start:pm2
+   ```
+
+3. Pour voir les logs :
+   ```bash
+   pm2 logs co2watch
+   ```
+
+4. Pour arrêter l'application :
+   ```bash
+   pm2 stop co2watch
+   ```
+
+5. Pour redémarrer :
+   ```bash
+   pm2 restart co2watch
+   ```
+
+Le fichier `ecosystem.config.js` contient la configuration pm2.
